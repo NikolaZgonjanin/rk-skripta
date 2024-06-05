@@ -1,0 +1,64 @@
+\subsection{Primeri}
+\large{\textbf{Primer 1:}}\\
+Mreža: 172.16.0.0 /16\\
+Zahtevi:
+\begin{itemize}
+    \item Dve podmreže sa 100 računara;
+    \item Jedna podmreža sa 255 računara;
+    \item Jedna podmreža sa 15 računara;
+    \item Tri point-to-point podmreže.
+\end{itemize}
+
+\vspace{12px}
+
+\textbf{Rešenje:}\\
+
+\textit{Korak 1:} Soritranje
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lc}
+\textbf{Podmreža} & \textbf{Br. Uređaja} \\\hline\hline
+LAN 1 & 255         \\
+LAN 2 & 100         \\
+LAN 3 & 100         \\
+LAN 4 & 15          \\
+PTP 1 & 2           \\
+PTP 2 & 2           \\
+PTP 3 & 2          
+\end{tabular}
+\label{tab:podm_pr1_sortirani_uredjaji}
+\end{center}
+\end{table}
+\textit{Korak 2:} Kreiranje maske
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lccc}
+\textbf{Podmreža} & \textbf{Br. Uređaja} & \textbf{Potrebno adresa} & \textbf{Maska} \\\hline\hline
+LAN 1 & 255         & $2^9$               & /23      \\
+LAN 2 & 100         & $2^7$               & /25      \\
+LAN 3 & 100         & $2^7$               & /25      \\
+LAN 4 & 15          & $2^5$               & /27      \\
+PTP 1 & 2           & $2^2$               & /30      \\
+PTP 2 & 2           & $2^2$               & /30      \\
+PTP 3 & 2           & $2^2$               & /30     
+\end{tabular}
+\label{tab:podm_pr1_maska}
+\end{center}
+\end{table}
+\textit{Korak 3:} Dodeljivanje adresa
+\begin{table}[H]
+\begin{center}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccc}
+\textbf{Podmreža} & \textbf{Mrežna adresa} & \textbf{Maska} & \textbf{Opseg korisnih adresa}     & \textbf{Adresa za emitovanje} \\\hline\hline
+LAN 1    & 17.16.0.0     & /23   & 17.16.0.1 - 17.16.1.254   & 17.16.1.255          \\
+LAN 2    & 17.16.2.0     & /25   & 17.16.2.1 - 17.16.2.126   & 17.16.2.127          \\
+LAN 3    & 17.16.2.128   & /25   & 17.16.2.129 - 17.16.2.254 & 17.16.2.255          \\
+LAN 4    & 17.16.3.0     & /27   & 17.16.3.1 - 17.16.3.30    & 17.16.3.31           \\
+PTP 1    & 17.16.3.32    & /30   & 17.16.3.33 - 17.16.3.34   & 17.16.3.35           \\
+PTP 2    & 17.16.3.36    & /30   & 17.16.3.37 - 17.16.3.38   & 17.16.3.39           \\
+PTP 3    & 17.16.3.40    & /30   & 17.16.3.41 - 17.16.3.42   & 17.16.3.43          
+\end{tabular}}
+\label{tab:podm_pr1_resenje}
+\end{center}
+\end{table}

@@ -1,0 +1,32 @@
+\subsection{Komande}
+
+\textbf{Kontrola pristupa}\\
+\textit{line console 0} - Lozinka za pristup preko konzole\\
+\textit{line aux 0} - Lozinka za pristup preko pomo\'{c}nog\\
+\textit{line vty 0 15} - Lozinka za pristup putem Telneta – VTY\\
+\textit{password X} - Unos lozinke - Ide nakon svih komandi iznad\\
+\textit{login} - Ide nakon svih komandi iznad\\
+\textit{enable password X} - Lozinka za pristup privilegovanom režimu\\
+\textit{enable secret Y} - Šifrovana lozinka za pristup privilegovanom režimu. Šifrovana lozinka mora biti drugačija od \textit{plain text} lozinke\\\\
+
+\textbf{Osnovno mreženje}\\
+\textit{interface X} - Bira interfejs\\
+\textit{clock rate X} - Naglašava brzinu pisanja podataka na serijskoj konekciji; Podešava se na DCE ruteru; Najčeš\'{c}a brzina je: 4000000\\
+\textit{ip address x.x.x.x y.y.y.y} - Posavlja ličnu IP adresu na interfejsu. X predstavlja IP adresu a Y mrežnu masku\\
+\textit{no shutdown} - Naglašava da se interfejs ne gasi\\\\
+
+\textbf{DHCP}\\
+\textit{ip dhcp excluded-address x.x.x.x x.x.x.x} - Naglašava opseg IP adresa koje ne\'{c}e mo\'{c}i da se dodele uređajima kroz DHCP\\
+\textit{ip dhcp pool X} - Bira DHCP "Pool"\ za podešavanje parametara\\
+\textit{network x.x.x.x y.y.y.y} - Podešava koju mrežu \'{c}e DHCP koristiti. X predstavlja IP adresu a Y mrežnu masku\\
+\textit{default-router x.x.x.x} - Podešava ulazni ruter u DHCP mrežu\\
+\textit{ip route x.x.x.x y.y.y.y z.z.z.z} - Podešava rutiranje do privatne mreže. X - Privatna adresa, Y - Mrežna maska priv. adrese, Z - Adresa rutera preko kog se pristupa mreži\\\\
+
+\textbf{NAT}\\
+\textit{ip nat inside source static x.x.x.x y.y.y.y} - Mapira privatnu (x) ka javnoj (y) adresi\\
+\textit{ip nat X} - Podešava interfejs rutera da je sa unutrašnje (inside) ili spoljašnje (outside) strane NAT\\
+
+\textbf{PAT}\\
+\textit{ip access list standard X} - Podešava PAT listu\\
+\textit{permit x.x.x.x y.y.y.y} - Podešava koje mrežne adrese trebaju da se prevode. X je adresa a Y wildcard biti (255.255.255.255 - podmreža)\\
+\textit{ip nat inside source list X int Y overload} - Mapira listu (X) privatnih adresa ka spoljašnjem interfejsu (Y) NAT\\

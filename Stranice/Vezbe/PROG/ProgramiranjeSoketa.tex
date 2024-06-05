@@ -1,0 +1,485 @@
+\section{Programiranje soketa}
+
+Za programiranje soketa u Pajtonu, možemo da koristimo ugrađenu soket biblioteku koja sadrži sve potrebne funkcije i klase koje su nam potrebne da pravimo i upravljamo soketima. Neke od češće korišćenih funkcija biblioteke su:
+\begin{itemize}
+    \item \textbf{socket():} Pravi novi soket;
+    \item \textbf{bind():} Asocira soket sa specifičnom adresom i portom;
+    \item \textbf{listen():} Započinje slušanje za dolazne veze na soketu;
+    \item \textbf{accept():} Prihvata zahtev za vezu od strane klijenta i vraća soket za komunikaciju;
+    \item \textbf{connect():} Ustpostavlja vezu sa udaljenim serverom;
+    \item \textbf{send():} Šalje podatke kroz soket;
+    \item \textbf{recv():} Prima podatke kroz soket;
+    \item \textbf{close():} Zatvara soket.
+\end{itemize}
+
+\subsection{Primer server soketa}
+
+\begin{itemize}
+    \item Napravi fajl sa nazivom \emph{server.py}
+    \item Importuj \emph{soket} modul u Pajton skriptu
+\end{itemize}
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    import socket
+\end{lstlisting}
+
+
+Napravimo funkciju \emph{run\_server} u koju ćemo pisati većinu našeg koda.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    def run_server():
+        # Kod servera ide ovde
+\end{lstlisting}
+
+\subsubsection{Instanciranje soket objekta}
+Sledeći korak je da u \emph{run\_server} funkciji napravimo soket objekat koristeći \emph{socket.socket()} funkciju.
+
+Prvi argument (\emph{socket.AF\_INET}) specifira IP adresu koja prati IPv4 standard.
+
+Drugi argument (\emph{socket.SOCK\_STREAM}) naglašava da pravimo TCP soket.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # Instanciranje soket objekta
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+\end{lstlisting}
+
+\subsubsection{Vezivanje socketa za IP adresu i port}
+Potrebno je da definišemo ime hosta ili IP servera i port da bi naznačili adresu sa koje će server biti dostupan i gde će slušati za dolazne veze. U ovom primeru, server osluškuje lokalnu mašinu - ovo je definisano promenljivom \emph{server\_ip} postavljenom na 127.0.0.1 (takođe poznata kao i localhost).
+
+Promenjiva \emph{port} je postavljena na 8000, što je broj porta koji će operativni sistem koristiti da identifikuje serversku aplikaciju.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    server_ip = "127.0.0.1" # localhost
+    port = 8000
+\end{lstlisting}
+
+Spremimo server da prima veze vezivanjem soketa za IP adresu i port koje smo definisali iznad.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # Vezivanje soketa za specificnu adresu i port
+    server.bind((server_ip, port))
+\end{lstlisting}
+
+\subsubsection{Slušanje za dolazeće veze}
+Postavimo serverski soket u stanje osluškivanja koristeći funkciju \emph{listen} kako biste mogli da primimo dolazne veze klijenata.
+
+Ova funkcija prihvata argument koji se zove \emph{backlog} i određuje maksimalni broj redovanih veza koje nisu prihvaćene. U ovom primeru koristimo vrednost 0 za ovaj argument. To znači da samo jedan klijent može interagovati sa serverom. Pokušaj veze bilo kog klijenta dok server radi sa drugim klijentom će biti odbijen.
+
+Ako navedemo vrednost koja je veća od 0, recimo 1, to govori operativnom sistemu koliko klijenata može biti stavljenih u red pre nego što se na njima pozove metoda \emph{accept}.
+
+Kada se pozove \emph{accept}, klijent se uklanja iz reda i više se ne računa prema ovom ograničenju. To će postati jasnije kada vidite dalje delove koda, ali šta ovaj parametar u suštini radi može se ilustrovati na sledeći način: čim vaš slušajući server primi zahtev za povezivanje, dodaje ovog klijenta u red i nastavlja da prihvata njegov zahtev. Ako pre nego što server interno pozove \emph{accept} na prvom klijentu, primi zahtev za povezivanje od drugog klijenta, gura ovog drugog klijenta u isti red, pod uslovom da ima dovoljno mesta u njemu. Veličina upravo ovog reda kontrolisana je argumentom \emph{backlog}. Čim server prihvati prvog klijenta, ovaj klijent se uklanja iz reda i server počinje komunikaciju sa njim. Drugi klijent ostaje u redu, čekajući da server postane slobodan i prihvati vezu.
+
+Ako izostavite argument backlog, biće postavljen na podrazumevanu vrednost vašeg sistema (pod Unixom, ovu podrazumevanu vrednost obično možete videti u fajlu \emph{/proc/sys/net/core/somaxconn}).
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # slusanje za dolazece veze
+    server.listen(0)
+    print(f"Slusam na {server_ip}:{port}")
+\end{lstlisting}
+
+\subsubsection{Prihvatanje veze}
+
+Sledeći korak je da prihvatimo dolaznu vezu klijenta. Metoda \emph{accept} zaustavlja izvršavanje niti dok se klijent ne poveže. Zatim vraća par tuple (conn, address), gde je \emph{address} tuple koji sadrži IP adresu i port klijenta, a \emph{conn} je novi soket objekat koji deli vezu sa klijentom i koji se može koristiti za komunikaciju s njim.
+
+Metoda \emph{accept} stvara novi soket za komunikaciju sa klijentom umesto da poveže slušajući soket (u našem primeru zvan server) sa adresom klijenta i koristi ga za komunikaciju, jer slušajući soket treba da osluškuje dalje veze od drugih klijenata, inače bi bio blokiran. Naravno, u našem slučaju, mi se bavimo samo jednim klijentom i odbijamo sve ostale veze dok to radimo, ali ovo će biti relevantnije kada dođemo do primera servera sa više niti.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # prihvatanje dolazicih veza
+    client_socket, client_address = server.accept()
+    print(f"Prihvatio vezu od {client_address[0]}:{client_address[1]}")
+\end{lstlisting}
+
+\subsubsection{Petlja za komunikaciju}
+
+Čim je veza sa klijentom uspostavljena, pokrećemo beskonačnu petlju da bismo komunicirali. U ovoj petlji koristimo metodu \emph{recv} koja pripada objektu \emph{client\_socket}. Ova metoda prima specifirani broj bitova od klijenta - u našem slučaju 1024.
+
+Pošto nam se podaci prenose u binarnoj formi, potrebno je da dekodiramo dolazeće podatke koristeći \emph{decode} metodu, a odlazeće podatke da enkodujemo koristeći \emph{encode} metodu.
+
+Nakon ovoga imamo \emph{if} kondicional koji prekida petlju u slučaju da klijent pošalje "kraj". Ovo znači da čim naš server primi "kraj" nisku, on klijentu šalje potvrdu i prekida vezu sa njim. U suprotnom, ispisujemo poruku na terminal.
+
+Imaj na umu da smo koristili metodu \emph{lower} nad promenljivom u kojoj skladištimo dolaznu poruku kada proveravamo da li je klijent poslao "kraj". Ovo radimo da ne bismo brinuli o tome da li je klijent poslao "kraj" velikim ili malim slovima.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # prihvatanje podataka od klijenta
+    while True:
+        data = client_socket.recv(1024).decode("utf-8")
+
+        # ukoliko klijent posalje "kraj", prekidamo
+        # petlju i zatvaramo vezu sa klijentom
+        if data.lower() == "kraj":
+            # saljemo odgovor klijentu kako bismo potvrdili da
+            # je server obradio zahtev i da ce zatvoriti vezu
+            client_socket.send("kraj".encode("utf-8")
+            break
+
+        print(f"Klijent: {data}")
+\end{lstlisting}
+
+\subsubsection{Odgovaranje klijentu}
+
+Sada treba da namestimo da server odgovara klijentu (Ukoliko klijent ne zeli da zatvori vezu). U beskonacnoj petlji, odmah nakon \emph{print(f"Klijent: {data}")}, treba da dodamo liniju koda gde klijentu potvrdjujemo da je server prihvatio poslate podatke.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    client_socket.send("prihvaceno".encode("utf-8")
+\end{lstlisting}
+
+\subsubsection{Oslobađanje resursa}
+
+Konačno, nakon petlje zatvaramo vezu klijentskog soketa koristeći \emph{close} metodu. Ovo garantuje da će se resursi pravilno osloboditi i da će se veza zatvoriti.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # zatvaranje klijent soketa (veze sa serverom)
+    client_socket.close()
+    print("Veza sa klijentom prekinuta")
+\end{lstlisting}
+
+\newpage
+
+\subsubsection{Kompletan kod osnovnog server soketa}
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    import socket
+    
+    def run_server():
+        # instanciranje soket objekta
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+        server_ip = "127.0.0.1" # localhost
+        port = 8000
+    
+        # vezivanje soketa za specificnu adresu i port
+        server.bind((server_ip, port))
+        # slusanje za dolazece veze
+        server.listen(0)
+        print(f"Slusam na {server_ip}:{port}")
+
+        # prihvatanje dolazece veze
+        client_socket, client_address = server.accept()
+        print(f"Prihvatio vezu od {client_address[0]}:{client_address[1]}")
+
+        # prihvatanje podataka od klijenta
+        while True:
+            data = client_socket.recv(1024).decode("utf-8")
+    
+            # ukoliko klijent posalje "kraj", prekidamo
+            # petlju i zatvaramo vezu sa klijentom
+            if data.lower() == "kraj":
+                # saljemo odgovor klijentu kako bismo potvrdili da
+                # je server obradio zahtev i da ce zatvoriti vezu
+                client_socket.send("kraj".encode("utf-8")
+                break
+    
+            print(f"Klijent: {data}")
+            client_socket.send("prihvaceno".encode("utf-8")
+        # zatvaranje klijent soketa (veze sa serverom)
+        client_socket.close()
+        print("Veza sa klijentom prekinuta")
+
+        server.close()
+
+    run_server()
+\end{lstlisting}
+
+\newpage
+
+\subsection{Primer klijent soketa}
+
+\begin{itemize}
+    \item Napravi fajl \emph{client.py}
+    \item Importuj soket biblioteku:
+\end{itemize}
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    import socket
+\end{lstlisting}
+
+Pravimo funkciju \emph{run\_client} koja će sadržati većinu koda.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    def run_client():
+        # kod klijent aplikacije ide ovde
+\end{lstlisting}
+
+\subsubsection{Instanciranje soket objekta}
+Sledeće koristimo \emph{socket.socket()} funkciju da napravimo TCP soket objekat koji služi kao klijentova tačka kontakta sa serverom.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # instanciranje soket objekta
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+\end{lstlisting}
+
+\subsubsection{Povezivanje sa server soketom}
+
+Specifikujemo IP adresu i port servera sa kojim se klijent povezuje. Oni bi trebalo da se poklapaju sa IP adresom i portom koji su definisani u \emph{server.py}.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    server_ip = "127.0.0.1"
+    server_port = 8000
+\end{lstlisting}
+
+Da bismo uspostavili vezu sa serverom koristimo metodu \emph{connect} na objektu klijentskog soketa. Imaj na umu da nismo vezali klijentski soket za bilo koju IP adresu ili port. To je normalno za klijenta jer će \emph{connect} automatski odabrati slobodan port i izabrati IP adresu koja obezbeđuje najbolju rutu do servera sa mrežnih interfejsa sistema i vezati soket za njih.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # uspostavi vezu sa serverom
+    client_socket.connect((server_ip, server_port))
+\end{lstlisting}
+
+\subsubsection{Petlja za komunikaciju}
+
+Nakon uspostavljanja veze, započinjemo beskonačnu petlju koja će nam služiti da komuniciramo sa serverom. Klijent će unositi poruke putem tastature koristeći \emph{input} funkciju, nakon čega ćemo enkodovati poruku u bajte i skratiti je na 1024 bajta. Nakon toga ćemo poslati poruku serveru korišćenjem funkcije \emph{client.send}.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    while True:
+        # unos poruke i slanje serveru
+        message = input("Unesite poruku: ")
+        client_socket.send(message.encode("utf-8")[:1024])
+\end{lstlisting}
+
+\subsubsection{Rukovanje odgovorom servera}
+
+Nakon što server primi poruku od klijenta, on i odgovara na istu. Da bismo obradili odgovor od servera, prvo primamo podatke koristeći \emph{recv} metodu da čitamo 1024 bajta. Nakon toga dekodiramo poruku i proveravamo da li je odgovor "\emph{kraj}". Ukoliko jeste program prekida petlju i zatvara vezu sa klijentom. U suprotnom štampamo odgovor servera na terminal.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # primanje odgovora od servera
+    response = client_socket.recv(1024).decode("utf-8")
+
+    # ukoliko je server poslao "kraj" petlja se prekida
+    # u suprotnom stampamo odgovor
+    if response.lower() == "kraj":
+        break
+
+    print(f"Server: {response}")
+\end{lstlisting}
+
+\subsubsection{Oslobađanje resursa}
+
+Nakon petlje zatvaramo klijent soket koristeći metodu \emph{close}. Ovo osigurava da se svi resursi pravilno oslobode i da se veza zatvori/prekine.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    # zatvaramo klijent soket (vezu sa serverom)
+    client_socket.close()
+\end{lstlisting}
+
+\subsubsection{Kompletan kod osnovnog klijent soketa}
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    import socket
+
+    def run_client():
+        # instanciranje soket objekta
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        server_ip = "127.0.0.1"
+        server_port = 8000
+
+        # uspostavi vezu sa serverom
+        client_socket.connect((server_ip, server_port))
+
+        while True:
+            # unos poruke i slanje serveru
+            message = input("Unesite poruku: ")
+            client_socket.send(message.encode("utf-8")[:1024])
+
+            # primanje odgovora od servera
+            response = client_socket.recv(1024).decode("utf-8")
+        
+            # ukoliko je server poslao "kraj" petlja se prekida
+            # u suprotnom stampamo odgovor
+            if response.lower() == "kraj":
+                break
+        
+            print(f"Server: {response}")
+
+        # zatvaramo klijent soket (vezu sa serverom)
+        client_socket.close()
+\end{lstlisting}
+
+\subsection{Rad sa više klijenata - Multithreading}
+
+Multithreading se implementira samo na serveru. Počinjemo tako što importujemo \emph{socket} i \emph{threading} biblioteke u našu skriptu.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    import socket
+    import threading
+\end{lstlisting}
+
+Definišemo funkciju \emph{run\_server} koja će, kao u prvom primeru, kreirati serverski soket, povezati ga i osluškivati dolazne veze. Zatim pozivamo \emph{accept} u beskonačnoj petlji. Nakon što \emph{accept} primi dolaznu vezu i vrati se, kreiramo nit koristeći konstruktor \emph{threading.Thread}. Ova nit će pozivati funkciju \emph{handle\_client} koju ćemo definisati kasnije, i proslediti joj \emph{client\_socket} i \emph{addr} kao argumente (\emph{addr} tuple sadrži IP adresu i port povezanog klijenta). Nakon što je nit kreirana, pozovemo \emph{start} na njoj da započne njeno izvršenje.
+
+Upamti da je poziv \emph{accept} blokirajući, pa u prvom prolazu kroz petlju, kada dođemo do linije sa \emph{accept}, zaustavljamo se i čekamo vezu klijenta bez izvršavanja bilo čega drugog. Čim se klijent poveže, metoda \emph{accept} se vraća, i nastavljamo izvršavanje: stvaramo nit koja će se baviti tim klijentom i prelazimo na sledeću iteraciju gde ćemo se ponovo zaustaviti na pozivu accept čekajući drugog klijenta da se poveže.
+
+Na kraju funkcije imamo obradu grešaka koja osigurava da je serverski soket uvek zatvoren u slučaju da se desi nešto neočekivano.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    def run_server():
+    server_ip = "127.0.0.1"  # ip adresa servera
+    port = 8000  # port servera
+    
+    # instanciranje soket objekta
+    try:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # vezivanje soketa za specificnu adresu i port
+        server.bind((server_ip, port))
+        # slusanje za dolazece veze
+        server.listen()
+        print(f" Slusam na { server_ip }:{ port}")
+
+        while True:
+            # prihvatanje dolazece veze
+            client_socket, addr = server.accept()
+            print(f"Prihvatio vezu od {addr[0]}:{addr[1]}")
+            
+            # zapocinjanje nove niti za rukovanje klijentom
+            thread = threading.Thread(target=handle_client, args=(client_socket, addr,))
+            thread.start()
+    except Exception as e:
+        print(f"Greska: {e}")
+    finally:
+        server.close()
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+Imajmo na umu da će server u našem primeru biti zaustavljen samo u slučaju neočekivane greške. U suprotnom, on će beskonačno slušati klijente, što znači da moramo da prekinemo terminal ako želimo da ga zaustavimo.
+
+\subsubsection{Funkcija za rukovanje klijentima na zasebnim nitima}
+
+Sada, iznad funkcije \emph{run\_server}, definišemo još jednu koja se zove \emph{handle\_client}. Ova funkcija će se izvršavati u zasebnoj niti za svaku klijentsku vezu. Prima objekat soketa klijenta i tuple \emph{addr} kao argumente.
+
+Unutar ove funkcije radimo isto što smo radili u primeru sa jednom nitom, plus neku obradu grešaka: započinjemo petlju da dobijemo poruke od klijenta koristeći \emph{recv}.
+
+Zatim proveravamo da li smo dobili poruku za zatvaranje. Ako jeste, odgovaramo sa niskom \emph{"kraj"} i zatvaramo vezu prekidanjem petlje. U suprotnom, ispisujemo poruku klijenta u terminal i nastavljamo sa sledećom iteracijom petlje da primimo sledeću poruku klijenta.
+
+Na kraju ove funkcije imamo neku obradu grešaka za neočekivane slučajeve (klauzula \emph{except}) i takođe klauzulu \emph{finally} gde oslobađamo \emph{client\_socket} koristeći \emph{close}. Ova klauzula \emph{finally} će se uvek izvršiti bez obzira na sve, što osigurava da je soket klijenta uvek pravilno oslobađen.
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    def handle_client(client_socket, addr):
+    try:
+        while True:
+            # primi i ispisi poruku klijenta
+            request = client_socket.recv(1024).decode("utf-8")
+            if request.lower() == "kraj":
+                client_socket.send("kraj".encode("utf-8"))
+                break
+            print (f" Klijent : {data}")
+            
+            # odgovor klijentu
+            client_socket.send("prihvaceno".encode("utf-8"))
+    except Exception as e:
+        print(f"Greska: {e}")
+    finally:
+        client_socket.close()
+        print(f"Veza sa klijentom ({addr[0]}:{addr[1]}) zatvorena")
+\end{lstlisting}
+
+\subsubsection{Kompletan kod višenitnog servera}
+
+\vspace{0.5cm}
+
+\begin{lstlisting}[language = Python]
+    import socket
+    import threading
+    
+    def run_server():
+    server_ip = "127.0.0.1"  # ip adresa servera
+    port = 8000  # port servera
+    
+    # instanciranje soket objekta
+    try:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # vezivanje soketa za specificnu adresu i port
+        server.bind((server_ip, port))
+        # slusanje za dolazece veze
+        server.listen()
+        print(f" Slusam na { server_ip }:{ port}")
+
+        while True:
+            # prihvatanje dolazece veze
+            client_socket, addr = server.accept()
+            print(f"Prihvatio vezu od {addr[0]}:{addr[1]}")
+            
+            # zapocinjanje nove niti za rukovanje klijentom
+            thread = threading.Thread(target=handle_client, args=(client_socket, addr,))
+            thread.start()
+    except Exception as e:
+        print(f"Greska: {e}")
+    finally:
+        server.close()
+        
+    def handle_client(client_socket, addr):
+    try:
+        while True:
+            # primi i ispisi poruku klijenta
+            data = client_socket.recv(1024).decode("utf-8")
+            if data.lower() == "kraj":
+                client_socket.send("kraj".encode("utf-8"))
+                break
+            print (f" Klijent : {data}")
+            
+            # odgovor klijentu
+            client_socket.send("prihvaceno".encode("utf-8"))
+    except Exception as e:
+        print(f"Greska: {e}")
+    finally:
+        client_socket.close()
+        print(f"Veza sa klijentom ({addr[0]}:{addr[1]}) zatvorena")
+
+    run_server()
+\end{lstlisting}
+
+\subsection{Primeri kolokvijuma}
+
+Primeri su napisani po prethodnim kolokvijumima.
+
+\input{Stranice/Vezbe/PROG/DM/Dijagonala Matrica.tex}
+
+\input{Stranice/Vezbe/PROG/PTP/Potapanje Brodica.tex}
+
+\input{Stranice/Vezbe/PROG/VTB/Vigenere Tabla.tex}
+
+\input{Stranice/Vezbe/PROG/XO/Iks Oks.tex}

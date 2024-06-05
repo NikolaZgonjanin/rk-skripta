@@ -1,0 +1,81 @@
+\section{Podrmežavanje}
+Podmrežavanje mreže znači stvaranje logičkih podela mreže. Podmreža, prema tome, uključuje podelu mreže na manje delove koji se nazivaju podmreže. Podmreža se primenjuje na IP adrese jer se to radi pozajmljivanjem bitova sa host dela IP adrese. U izvesnom smislu, IP adresa tada ima tri komponente – mrežni deo, deo podmreže i, konačno, deo hosta.
+
+\subsection{Mrežne maske}
+Mrežna maska se predstavlja sa /n na kraju adrese (192.168.0.0 /25). Ovaj broj predstavlja koliko bitova se koristi za mrežni deo adrese.\\
+
+Ako uzmemo primer iznad gde je mrežna maska 25 i to pretvorimo u binarni sistem dobijamo slede\'{c}i broj:
+
+$$11111111.11111111.11111111.10000000$$\\
+
+Gde su jedinice mrežni bitovi, a nule host bitovi.\\
+
+\subsection{Kako nameštamo podmrežu?}
+Podmreže trebaju da se nameste na takav način da ne utiču na mrežne bitove.\\
+
+U klasi C, prva tri okteta su mrežni bitovi tako da se oni ne diraju. Ako ho\'{c}emo da podelimo ostatak mreže na dva podmreže to radimo na slede\'{c}i način\\
+
+\textbf{Podmreža 1}: Prvi bit koji se bira iz ID hosta \'{c}e biti 0 dok \'{c}e ostali bitovi u oktetu biti u opsegu od 192.168.0.00000000 do 192.168.0.01111111.\\
+
+Po tome možemo videti da je ospeg podmreže 1: 192.168.0.0 do 193.1.0.127\\
+Gde je:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{ll}
+Adresa mreže           & 192.168.0.0 /25 \\
+Adresa za emitovanje   & 192.168.0.127   \\
+Maska                  & 255.255.255.128 \\
+Maksimalni br. hostova & 126             \\             
+\end{tabular}
+\end{center}
+\end{table}
+
+\textbf{Podmreža 2} Prvi bit koji se bira iz ID hosta \'{c}e biti 1 dok \'{c}e ostali bitovi u oktetu biti u opsegu od 192.168.0.10000000 do 192.168.0.11111111.\\
+
+Po tome možemo videti da je ospeg podmreže 2: 192.168.0.128 do 193.1.0.255\\
+Gde je:\\
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{ll}
+Adresa mreže           & 192.168.0.128 /25 \\
+Adresa za emitovanje   & 192.168.0.255   \\
+Maska                  & 255.255.255.128 \\
+Maksimalni br. hostova & 126             \\             
+\end{tabular}
+\end{center}
+\end{table}
+
+Ako dobijemo specifikaciju mreže gde imamo zahtev za više podmreža sa različitim brojem uređaja onda je potrebno da sortiramo mreže po broju računara od najve\'{c}eg do najmanjeg kao što se može videti u tabeli .
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Sortirano} & \textbf{Nesortirano} \\\hline\hline
+390       & LAN1: 600   \\
+60        & LAN2: 390   \\
+20        & LAN3: 220   \\
+600       & LAN4: 60    \\
+220       & LAN5: 20   
+\end{tabular}
+\caption{Sortiranje po broju uređaja}
+\label{tab:sortiranje_uredjaja}
+\end{center}
+\end{table}
+
+Kada delimo mrežu na podmreže bitno je da dodeljujemo samo koliko je potrebno bitova. Ako uzmemo tabelu iznad LAN1 treba da ima 600 uređaja, te nam je potrebno 602 adrese (Adrese mreže i emitovanja).\\
+
+Da bi odredili koja maska nam treba, treba da nađemo stepen dovjke najbliži 602 uz to da pratimo slede\'{c}e pravilo:
+
+$$2^n \geq broj\ adresa$$
+
+Po ovome dobijamo da nam je potrebno 1024 ($2^{10}$) adresa.\\
+
+Nakon ovoga nam ostaje da označimo tako što primenimo slede\'{c}u formulu:
+
+$$2^{32} - 2^n$$
+
+i dobijamo da je mrežna maska 22 tj:
+
+$$11111111.11111111.11111100.00000000$$
+
+\input{Stranice/Vezbe/PDM/Primeri.tex}
